@@ -1,15 +1,11 @@
 import { useState } from 'react'
 
-const AddBookForm = (props) => {
+const AddBookForm = () => {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [publicationYear, setPublicationYear] = useState('')
   const [genre, setGenre] = useState('')
   const [genres, setGenres] = useState([])
-
-  if (!props.show) {
-    return null
-  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()

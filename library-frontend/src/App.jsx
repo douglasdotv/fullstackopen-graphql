@@ -1,18 +1,19 @@
-import { useState } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import NavigationMenu from './components/NavigationMenu'
 import Books from './components/Books'
 import Authors from './components/Authors'
 import AddBookForm from './components/AddBookForm'
 
 const App = () => {
-  const [page, setPage] = useState('books')
-
   return (
     <div>
-      <NavigationMenu setPage={setPage} />
-      <Books show={page === 'books'} />
-      <Authors show={page === 'authors'} />
-      <AddBookForm show={page === 'add'} />
+      <NavigationMenu />
+      <Routes>
+        <Route path="/books" element={<Books />} />
+        <Route path="/authors" element={<Authors />} />
+        <Route path="/add-book" element={<AddBookForm />} />
+        <Route path="*" element={<Books />} />
+      </Routes>
     </div>
   )
 }

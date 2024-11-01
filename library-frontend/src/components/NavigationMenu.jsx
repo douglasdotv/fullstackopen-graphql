@@ -1,46 +1,23 @@
-const NavigationMenu = (props) => {
+import { Link } from 'react-router-dom'
+
+const NavigationMenu = () => {
   const linkStyle = {
     marginRight: 10,
-    cursor: 'pointer',
     textDecoration: 'none',
     color: 'blue',
   }
 
   return (
     <nav>
-      <a
-        href="#"
-        style={linkStyle}
-        role="button"
-        onClick={(e) => {
-          e.preventDefault()
-          props.setPage('books')
-        }}
-      >
+      <Link to="/books" style={linkStyle}>
         Books
-      </a>
-      <a
-        href="#"
-        style={linkStyle}
-        role="button"
-        onClick={(e) => {
-          e.preventDefault()
-          props.setPage('authors')
-        }}
-      >
+      </Link>
+      <Link to="/authors" style={linkStyle}>
         Authors
-      </a>
-      <a
-        href="#"
-        style={linkStyle}
-        role="button"
-        onClick={(e) => {
-          e.preventDefault()
-          props.setPage('add')
-        }}
-      >
+      </Link>
+      <Link to="/add-book" style={linkStyle}>
         Add book
-      </a>
+      </Link>
     </nav>
   )
 }
