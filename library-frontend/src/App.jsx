@@ -3,6 +3,7 @@ import NavigationMenu from './components/NavigationMenu'
 import Books from './components/Books'
 import Authors from './components/Authors'
 import AddBookForm from './components/AddBookForm'
+import EditAuthorForm from './components/EditAuthorForm'
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
         <Route path="/books" element={<Books />} />
         <Route path="/authors" element={<Authors />} />
         <Route path="/add-book" element={<AddBookForm />} />
+        <Route path="/edit-author" element={<EditAuthorForm />} />
         <Route path="*" element={<Books />} />
       </Routes>
     </div>

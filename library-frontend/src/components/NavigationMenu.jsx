@@ -18,6 +18,9 @@ const NavigationMenu = () => {
       <Link to="/add-book" style={linkStyle}>
         Add book
       </Link>
+      <Link to="/edit-author" style={linkStyle}>
+        Edit author
+      </Link>
     </nav>
   )
 }
