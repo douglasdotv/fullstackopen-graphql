@@ -110,6 +110,10 @@ const typeDefs = `
       publicationYear: Int!
       genres: [String!]!
     ): Book
+    editAuthor(
+      name: String!, 
+      birthYear: Int!
+    ): Author
   }
 `
 
@@ -149,6 +153,23 @@ const resolvers = {
       books = books.concat(book)
 
       return book
+    },
+    editAuthor: (_parent, args) => {
+      const authorIndex = authors.findIndex(
+        (author) => author.name === args.name
+      )
+
+      if (authorIndex === -1) {
+        return null
+      }
+
+      const updatedAuthor = {
+        ...authors[authorIndex],
+        birthYear: args.birthYear,
+      }
+      authors[authorIndex] = updatedAuthor
+
+      return updatedAuthor
     },
   },
   Author: {
