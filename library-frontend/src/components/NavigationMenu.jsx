@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-const NavigationMenu = () => {
+const NavigationMenu = ({ token, handleLogout }) => {
   const linkStyle = {
     marginRight: 10,
     textDecoration: 'none',
@@ -15,12 +15,23 @@ const NavigationMenu = () => {
       <Link to="/authors" style={linkStyle}>
         Authors
       </Link>
-      <Link to="/add-book" style={linkStyle}>
-        Add book
-      </Link>
-      <Link to="/edit-author" style={linkStyle}>
-        Edit author
-      </Link>
+      {token ? (
+        <>
+          <Link to="/add-book" style={linkStyle}>
+            Add book
+          </Link>
+          <Link to="/edit-author" style={linkStyle}>
+            Edit author
+          </Link>
+          <Link to="/" onClick={handleLogout} style={linkStyle}>
+            Log out
+          </Link>
+        </>
+      ) : (
+        <Link to="/login" style={linkStyle}>
+          Log in
+        </Link>
+      )}
     </nav>
   )
 }

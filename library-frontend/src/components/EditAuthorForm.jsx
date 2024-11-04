@@ -8,6 +8,7 @@ import Select from 'react-select'
 const EditAuthorForm = () => {
   const [selectedAuthor, setSelectedAuthor] = useState(null)
   const [birthYear, setBirthYear] = useState('')
+  const [error, setError] = useState('')
 
   const navigate = useNavigate()
 
@@ -19,6 +20,14 @@ const EditAuthorForm = () => {
     onCompleted: () => {
       navigate('/authors')
     },
+    onError: (err) => {
+      const graphQLErrors = err.graphQLErrors
+      if (graphQLErrors?.length) {
+        setError(graphQLErrors[0].message || 'Error updating author')
+      } else {
+        setError('An unknown error occurred')
+      }
+    },
   })
 
   const authorOptions = authors.map((author) => ({
@@ -28,8 +37,9 @@ const EditAuthorForm = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault()
-
+    setError('')
     if (!selectedAuthor) {
+      setError('Please select an author')
       return
     }
 
@@ -39,9 +49,6 @@ const EditAuthorForm = () => {
         birthYear: parseInt(birthYear),
       },
     })
-
-    setSelectedAuthor(null)
-    setBirthYear('')
   }
 
   return (
@@ -59,18 +66,17 @@ const EditAuthorForm = () => {
           />
         </div>
         <div>
-          <div>
-            <label htmlFor="birthYear">New birth year: </label>
-            <input
-              id="birthYear"
-              type="number"
-              value={birthYear}
-              onChange={(e) => setBirthYear(e.target.value)}
-            />
-          </div>
+          <label htmlFor="birthYear">New birth year: </label>
+          <input
+            id="birthYear"
+            type="number"
+            value={birthYear}
+            onChange={(e) => setBirthYear(e.target.value)}
+          />
         </div>
         <button type="submit">Update author</button>
       </form>
+      {error && <div style={{ color: 'red', margin: '10px' }}>{error}</div>}
     </div>
   )
 }
