@@ -1,6 +1,7 @@
 require('./db')
 const { ApolloServer } = require('@apollo/server')
 const { startStandaloneServer } = require('@apollo/server/standalone')
+const { GraphQLError } = require('graphql')
 const Author = require('./models/author')
 const Book = require('./models/book')
 
@@ -67,34 +68,59 @@ const resolvers = {
   },
   Mutation: {
     addBook: async (_parent, args) => {
-      let author = await Author.findOne({ name: args.authorName })
+      try {
+        let author = await Author.findOne({ name: args.authorName })
 
-      if (!author) {
-        author = new Author({ name: args.authorName })
-        await author.save()
+        if (!author) {
+          author = new Author({ name: args.authorName })
+          await author.save()
+        }
+
+        const book = new Book({
+          title: args.title,
+          publicationYear: args.publicationYear,
+          genres: args.genres,
+          author: author._id,
+        })
+
+        await book.save()
+
+        return book.populate('author')
+      } catch (error) {
+        throw new GraphQLError('Adding book failed', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args,
+            error,
+          },
+        })
       }
-
-      const book = new Book({
-        title: args.title,
-        publicationYear: args.publicationYear,
-        genres: args.genres,
-        author: author._id,
-      })
-
-      await book.save()
-
-      return book.populate('author')
     },
     editAuthor: async (_parent, args) => {
-      const author = await Author.findOne({ name: args.name })
+      try {
+        const author = await Author.findOne({ name: args.name })
 
-      if (!author) {
-        return null
+        if (!author) {
+          throw new GraphQLError('Author not found', {
+            extensions: {
+              code: 'BAD_USER_INPUT',
+              invalidArgs: args.name,
+            },
+          })
+        }
+
+        author.birthYear = args.birthYear
+
+        return await author.save()
+      } catch (error) {
+        throw new GraphQLError('Editing author failed', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args,
+            error,
+          },
+        })
       }
-
-      author.birthYear = args.birthYear
-
-      return await author.save()
     },
   },
   Author: {
