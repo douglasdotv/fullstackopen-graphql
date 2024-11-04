@@ -1,22 +1,51 @@
 import { useQuery } from '@apollo/client'
-import { GET_BOOKS } from '../queries'
+import { useState } from 'react'
+import { GET_BOOKS, GET_BOOKS_BY_GENRE } from '../queries'
 
 const Books = () => {
-  const { loading, error, data } = useQuery(GET_BOOKS)
+  const [selectedGenre, setSelectedGenre] = useState(null)
 
-  const books = data?.allBooks || []
+  const { loading: allLoading, data: allData } = useQuery(GET_BOOKS, {
+    skip: !!selectedGenre,
+  })
+
+  const {
+    loading: genreLoading,
+    data: genreData,
+    refetch,
+  } = useQuery(GET_BOOKS_BY_GENRE, {
+    variables: { genre: selectedGenre },
+    skip: !selectedGenre,
+  })
+
+  const books = selectedGenre ? genreData?.allBooks : allData?.allBooks || []
+
+  const genres = Array.from(
+    new Set((allData?.allBooks || []).flatMap((book) => book.genres))
+  )
+
+  const loading = selectedGenre ? genreLoading : allLoading
+
+  const handleGenreSelect = (genre) => {
+    setSelectedGenre(genre)
+    if (genre) {
+      refetch({ genre })
+    }
+  }
 
   if (loading) {
     return <div>Loading...</div>
   }
 
-  if (error) {
-    return <div>Error: {error.message}</div>
-  }
-
   return (
     <div>
       <h2>Books</h2>
+      {selectedGenre && (
+        <p>
+          Selected genre:{' '}
+          <span style={{ fontWeight: 'bold' }}>{selectedGenre}</span>
+        </p>
+      )}
       <table>
         <tbody>
           <tr>
@@ -33,6 +62,15 @@ const Books = () => {
           ))}
         </tbody>
       </table>
+      <div>
+        <h3>Filter by genre</h3>
+        {genres.map((genre) => (
+          <button key={genre} onClick={() => handleGenreSelect(genre)}>
+            {genre.charAt(0).toUpperCase() + genre.slice(1).toLowerCase()}
+          </button>
+        ))}
+        <button onClick={() => handleGenreSelect(null)}>All</button>
+      </div>
     </div>
   )
 }

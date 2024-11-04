@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@apollo/client'
+import { useMutation, useApolloClient } from '@apollo/client'
 import { ADD_BOOK } from '../mutations'
-import { GET_BOOKS } from '../queries'
+import { GET_BOOKS, GET_BOOKS_BY_GENRE } from '../queries'
 
 const AddBookForm = () => {
   const [title, setTitle] = useState('')
@@ -14,10 +14,12 @@ const AddBookForm = () => {
 
   const navigate = useNavigate()
 
+  const client = useApolloClient()
+
   const [createBook] = useMutation(ADD_BOOK, {
-    refetchQueries: [{ query: GET_BOOKS }],
     onCompleted: () => {
       navigate('/books')
+      client.refetchQueries({ include: [GET_BOOKS] })
     },
     onError: (err) => {
       const graphQLErrors = err.graphQLErrors
@@ -35,6 +37,8 @@ const AddBookForm = () => {
         setError('An unknown error occurred')
       }
     },
+    update: (cache, { data: { addBook } }) =>
+      updateCacheWithNewBook(cache, addBook),
   })
 
   const handleSubmit = async (event) => {
@@ -53,6 +57,36 @@ const AddBookForm = () => {
   const addGenre = () => {
     setGenres(genres.concat(genre))
     setGenre('')
+  }
+
+  const updateCacheWithNewBook = (cache, addBook) => {
+    if (addBook.genres) {
+      addBook.genres.forEach((genre) => {
+        updateBooksByGenre(cache, genre, addBook)
+      })
+    }
+  }
+
+  const updateBooksByGenre = (cache, genre, addBook) => {
+    cache.updateQuery(
+      { query: GET_BOOKS_BY_GENRE, variables: { genre } },
+      (oldData) => {
+        return getUpdatedBooks(oldData, addBook)
+      }
+    )
+  }
+
+  const getUpdatedBooks = (oldData, addBook) => {
+    if (!oldData) {
+      return { allBooks: [addBook] }
+    }
+
+    const bookExists = oldData.allBooks.some((book) => book.id === addBook.id)
+
+    return {
+      ...oldData,
+      allBooks: bookExists ? oldData.allBooks : [...oldData.allBooks, addBook],
+    }
   }
 
   return (

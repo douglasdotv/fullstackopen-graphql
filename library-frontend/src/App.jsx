@@ -7,6 +7,7 @@ import Authors from './components/Authors'
 import AddBookForm from './components/AddBookForm'
 import EditAuthorForm from './components/EditAuthorForm'
 import LoginForm from './components/LoginForm'
+import RecommendedBooks from './components/RecommendedBooks'
 
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('library-user-token'))
@@ -29,6 +30,7 @@ const App = () => {
           <>
             <Route path="/add-book" element={<AddBookForm />} />
             <Route path="/edit-author" element={<EditAuthorForm />} />
+            <Route path="/recommended-books" element={<RecommendedBooks />} />
             <Route path="/login" element={<Navigate replace to="/books" />} />
           </>
         ) : (

@@ -23,6 +23,9 @@ const NavigationMenu = ({ token, handleLogout }) => {
           <Link to="/edit-author" style={linkStyle}>
             Edit author
           </Link>
+          <Link to="/recommended-books" style={linkStyle}>
+            Recommended books
+          </Link>
           <Link to="/" onClick={handleLogout} style={linkStyle}>
             Log out
           </Link>
