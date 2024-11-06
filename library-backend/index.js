@@ -1,15 +1,27 @@
 require('dotenv').config()
 require('./db')
+const express = require('express')
+const http = require('http')
 const { ApolloServer } = require('@apollo/server')
-const { startStandaloneServer } = require('@apollo/server/standalone')
 const { GraphQLError } = require('graphql')
+const { expressMiddleware } = require('@apollo/server/express4')
+const {
+  ApolloServerPluginDrainHttpServer,
+} = require('@apollo/server/plugin/drainHttpServer')
+const { makeExecutableSchema } = require('@graphql-tools/schema')
+const { WebSocketServer } = require('ws')
+const { useServer } = require('graphql-ws/lib/use/ws')
+const { PubSub } = require('graphql-subscriptions')
 const jwt = require('jsonwebtoken')
-const bcrypt = require('bcryptjs')
+const cors = require('cors')
 const Author = require('./models/author')
 const Book = require('./models/book')
 const User = require('./models/user')
 
 const JWT_SECRET = process.env.JWT_SECRET
+const PORT = process.env.PORT || 4000
+
+const pubsub = new PubSub()
 
 const typeDefs = `
   type Author {
@@ -66,6 +78,10 @@ const typeDefs = `
       password: String!
     ): Token
   }
+
+  type Subscription {
+    bookAdded: Book!
+  }
 `
 
 const resolvers = {
@@ -120,7 +136,10 @@ const resolvers = {
 
         await book.save()
 
-        return book.populate('author')
+        const populatedBook = await book.populate('author')
+
+        pubsub.publish('BOOK_ADDED', { bookAdded: populatedBook })
+        return populatedBook
       } catch (error) {
         throw new GraphQLError('Adding book failed', {
           extensions: {
@@ -220,6 +239,11 @@ const resolvers = {
       return { value: jwt.sign(userForToken, JWT_SECRET) }
     },
   },
+  Subscription: {
+    bookAdded: {
+      subscribe: () => pubsub.asyncIterator(['BOOK_ADDED']),
+    },
+  },
   Author: {
     bookCount: async (parent) => {
       return Book.countDocuments({ author: parent._id })
@@ -227,22 +251,56 @@ const resolvers = {
   },
 }
 
+const schema = makeExecutableSchema({ typeDefs, resolvers })
+
+const app = express()
+const httpServer = http.createServer(app)
+
+const wsServer = new WebSocketServer({
+  server: httpServer,
+  path: '/graphql',
+})
+useServer({ schema }, wsServer)
+
 const server = new ApolloServer({
-  typeDefs,
-  resolvers,
+  schema,
+  plugins: [
+    ApolloServerPluginDrainHttpServer({ httpServer }),
+    {
+      async serverWillStart() {
+        return {
+          async drainServer() {
+            await wsServer.close()
+          },
+        }
+      },
+    },
+  ],
 })
 
-startStandaloneServer(server, {
-  listen: { port: 4000 },
-  context: async ({ req }) => {
-    const auth = req?.headers.authorization
-    if (auth?.startsWith('Bearer ')) {
-      const decodedToken = jwt.verify(auth.substring(7), JWT_SECRET)
-      const currentUser = await User.findById(decodedToken.id)
-      return { currentUser }
-    }
-    return {}
-  },
-}).then(({ url }) => {
-  console.log(`Server ready at ${url}`)
-})
+const startServer = async () => {
+  await server.start()
+
+  app.use(
+    '/graphql',
+    cors(),
+    express.json(),
+    expressMiddleware(server, {
+      context: async ({ req }) => {
+        const auth = req?.headers.authorization
+        if (auth?.startsWith('Bearer ')) {
+          const decodedToken = jwt.verify(auth.substring(7), JWT_SECRET)
+          const currentUser = await User.findById(decodedToken.id)
+          return { currentUser }
+        }
+        return {}
+      },
+    })
+  )
+
+  httpServer.listen(PORT, () =>
+    console.log(`Server is now running on http://localhost:${PORT}/graphql`)
+  )
+}
+
+startServer()
