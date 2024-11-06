@@ -37,6 +37,10 @@ const Books = () => {
     return <div>Loading...</div>
   }
 
+  if (!books) {
+    return <div>No books found</div>
+  }
+
   return (
     <div>
       <h2>Books</h2>
