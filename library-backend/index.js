@@ -14,6 +14,7 @@ const cors = require('cors')
 const jwt = require('jsonwebtoken')
 const typeDefs = require('./schema')
 const resolvers = require('./resolvers')
+const { bookCountLoader } = require('./dataloader')
 const User = require('./models/user')
 
 const JWT_SECRET = process.env.JWT_SECRET
@@ -56,12 +57,14 @@ const startServer = async () => {
     expressMiddleware(server, {
       context: async ({ req }) => {
         const auth = req?.headers.authorization
+        let currentUser = null
+
         if (auth?.startsWith('Bearer ')) {
           const decodedToken = jwt.verify(auth.substring(7), JWT_SECRET)
-          const currentUser = await User.findById(decodedToken.id)
-          return { currentUser }
+          currentUser = await User.findById(decodedToken.id)
         }
-        return {}
+
+        return { currentUser, bookCountLoader }
       },
     })
   )
